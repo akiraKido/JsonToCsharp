@@ -1,9 +1,9 @@
 using System;
 using System.IO;
 
-namespace JsonToCsharp
+namespace JsonToCsharp.Core
 {
-    interface ICharReader : IDisposable
+    public interface ICharReader : IDisposable
     {
         int CurrentLine { get; }
         int CurrentLineOffset { get; }
@@ -11,9 +11,8 @@ namespace JsonToCsharp
         char PeekChar();
     }
 
-    class FileReader : ICharReader
+    public class FileReader : ICharReader
     {
-        private readonly string _path;
         private readonly char[] _buffer = new char[1024];
         private int _bufferLength = 0;
         private readonly StreamReader _reader;
@@ -22,9 +21,8 @@ namespace JsonToCsharp
         public int CurrentLine { get; private set; }
         public int CurrentLineOffset { get; private set; }
 
-        internal FileReader(string path)
+        public FileReader(string path)
         {
-            _path = path;
             _reader = File.OpenText(path);
         }
 

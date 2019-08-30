@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <AssemblyName>json-to-csharp</AssemblyName>
@@ -11,6 +11,10 @@
     <None Update="keywords-csharp.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\JsonToCsharp.Core\JsonToCsharp.Core.csproj" />
   </ItemGroup>
 
 </Project>

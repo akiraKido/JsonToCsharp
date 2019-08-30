@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonToCsharp", "JsonToCshar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonToCsharp.Tests", "JsonToCsharp.Tests\JsonToCsharp.Tests.csproj", "{31F7C931-3763-474E-8D33-D5747E422688}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JsonToCsharp.Core", "JsonToCsharp.Core\JsonToCsharp.Core.csproj", "{2BFC2FD5-B1DF-47B4-AFD8-99E76AFDBB4B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{31F7C931-3763-474E-8D33-D5747E422688}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31F7C931-3763-474E-8D33-D5747E422688}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{31F7C931-3763-474E-8D33-D5747E422688}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BFC2FD5-B1DF-47B4-AFD8-99E76AFDBB4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BFC2FD5-B1DF-47B4-AFD8-99E76AFDBB4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BFC2FD5-B1DF-47B4-AFD8-99E76AFDBB4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BFC2FD5-B1DF-47B4-AFD8-99E76AFDBB4B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
