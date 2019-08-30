@@ -27,8 +27,9 @@ namespace JsonToCsharp
         {
             WriteLine("usage: json-to-csharp [options] <input>");
             WriteLine("options:");
-            WriteLine("  -n    name of root object class");
-            WriteLine("  -o    output directory path");
+            WriteLine("  -n    name of root object class        (default = file name)");
+            WriteLine("  -s    name of namespace class resides  (default = global)");
+            WriteLine("  -o    output directory path            (default = [input dir]/out)");
         }
     }
 
