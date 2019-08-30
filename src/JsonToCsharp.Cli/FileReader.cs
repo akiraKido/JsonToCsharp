@@ -3,12 +3,12 @@ using System.IO;
 
 namespace JsonToCsharp
 {
-
     interface ICharReader : IDisposable
     {
         int CurrentLine { get; }
         int CurrentLineOffset { get; }
         char ReadChar();
+        char PeekChar();
     }
 
     class FileReader : ICharReader
@@ -33,16 +33,18 @@ namespace JsonToCsharp
             _reader.Dispose();
         }
 
+        public char PeekChar()
+        {
+            return CanRead() == false 
+                ? '\0' 
+                : _buffer[_offset];
+        }
+
         public char ReadChar()
         {
-            if (_offset >= _bufferLength)
+            if (CanRead() == false)
             {
-                _bufferLength = _reader.ReadBlock(_buffer, 0, _buffer.Length);
-                if (_bufferLength <= 0)
-                {
-                    return '\0';
-                }
-                _offset = 0;
+                return '\0';
             }
 
             var result = _buffer[_offset++];
@@ -51,8 +53,25 @@ namespace JsonToCsharp
                 CurrentLine++;
                 CurrentLineOffset = 0;
             }
+
             CurrentLineOffset++;
             return result;
+        }
+
+        private bool CanRead()
+        {
+            if (_offset >= _bufferLength)
+            {
+                _bufferLength = _reader.ReadBlock(_buffer, 0, _buffer.Length);
+                if (_bufferLength <= 0)
+                {
+                    return false;
+                }
+
+                _offset = 0;
+            }
+
+            return true;
         }
     }
 }
