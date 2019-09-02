@@ -11,6 +11,8 @@ namespace JsonToCsharp.Core
     {
         private readonly IReadOnlyOptions _options;
 
+        private readonly Dictionary<string, string> _classResults = new Dictionary<string, string>();
+
         public JsonToCsharpGenerator() => _options = new Options();
 
         public JsonToCsharpGenerator(IReadOnlyOptions options) => _options = options;
@@ -19,12 +21,18 @@ namespace JsonToCsharp.Core
         {
             using (var lexer = new Lexer(reader))
             {
-                CreateEntry(name, outputDir, reader, lexer);
+                CreateEntry(name, reader, lexer);
+            }
+
+            foreach (var (className, generatedText) in _classResults)
+            {
+                var outputPath = Path.Combine(outputDir.FullName, $"{className}.cs");
+                File.WriteAllText(outputPath, generatedText);
             }
         }
 
         private static readonly HashSet<string> PredefinedCsharpIdentifiers =
-            new HashSet<string>(new []
+            new HashSet<string>(new[]
             {
                 "abstract",
                 "as",
@@ -106,7 +114,7 @@ namespace JsonToCsharp.Core
                 "while",
             });
 
-        private string CreateEntry(string name, DirectoryInfo outputDir, ICharReader reader, Lexer lexer)
+        private string CreateEntry(string name, ICharReader reader, Lexer lexer)
         {
             var token = lexer.Token;
             var items = new List<(string, string)>();
@@ -118,17 +126,17 @@ namespace JsonToCsharp.Core
             }
 
             lexer.Advance(); // eat {
-            while ((token = lexer.Token).tokenType != TokenType.R_Brace)
+            while (lexer.Token.tokenType != TokenType.R_Brace)
             {
-                var item = GetItem(outputDir, reader, lexer);
+                var item = GetItem(reader, lexer);
                 items.Add(item);
             }
 
             lexer.Advance();
 
+            var className = name.SnakeToUpperCamel();
             var result = CreateImmutableClass(name, items);
-            var outputPath = Path.Combine(outputDir.FullName, $"{name.SnakeToUpperCamel()}.cs");
-            File.WriteAllText(outputPath, result);
+            _classResults[className] = result;
 
             return name.SnakeToUpperCamel();
         }
@@ -160,15 +168,12 @@ namespace JsonToCsharp.Core
             builder += $"public {nameCamelUpper}";
             builder += "(";
             builder.Indent();
-            foreach (var item in items.Take(items.Count - 1))
+            foreach (var (s, type) in items.Take(items.Count - 1))
             {
-                var itemName = item.name;
-                if (PredefinedCsharpIdentifiers.Contains(itemName))
-                {
-                    itemName = $"{itemName.SnakeToUpperCamel()}";
-                }
-
-                builder += $"{item.type} {itemName},";
+                var itemName = s;
+                builder += PredefinedCsharpIdentifiers.Contains(itemName)
+                    ? $"{type} {itemName.SnakeToUpperCamel()}"
+                    : $"{type} {itemName},";
             }
 
             var lastParameter = items.Last();
@@ -204,6 +209,7 @@ namespace JsonToCsharp.Core
                 {
                     builder += $"[DataMember(Name = \"{item.name}\")]";
                 }
+
                 builder += $"public {item.type} {item.name.SnakeToUpperCamel()} {{ get; }}";
             }
 
@@ -220,7 +226,7 @@ namespace JsonToCsharp.Core
         }
 
 
-        private (string, string) GetItem(DirectoryInfo outputDir, ICharReader reader, Lexer lexer)
+        private (string, string) GetItem(ICharReader reader, Lexer lexer)
         {
             var key = GetKey(reader, lexer);
             lexer.CheckAndAdvance(TokenType.Colon);
@@ -235,10 +241,10 @@ namespace JsonToCsharp.Core
                     lexer.Advance(); // eat token
                     break;
                 case TokenType.L_Brace:
-                    type = CreateEntry(key, outputDir, reader, lexer);
+                    type = CreateEntry(key, reader, lexer);
                     break;
                 case TokenType.L_Bracket:
-                    var genericType = GetArrayGenericType(key, outputDir, reader, lexer);
+                    var genericType = GetArrayGenericType(key, reader, lexer);
                     type = $"IEnumerable<{genericType}>";
                     break;
                 default:
@@ -270,7 +276,7 @@ namespace JsonToCsharp.Core
             return key;
         }
 
-        private string GetArrayGenericType(string key, DirectoryInfo outputDir, ICharReader reader, Lexer lexer)
+        private string GetArrayGenericType(string key, ICharReader reader, Lexer lexer)
         {
             lexer.Advance(); // eat [
             var token = lexer.Token;
@@ -289,7 +295,7 @@ namespace JsonToCsharp.Core
                 }
 
                 genericType = arrayEntryName;
-                CreateEntry(arrayEntryName, outputDir, reader, lexer);
+                CreateEntry(arrayEntryName, reader, lexer);
                 int nest = 0;
                 while (true)
                 {
