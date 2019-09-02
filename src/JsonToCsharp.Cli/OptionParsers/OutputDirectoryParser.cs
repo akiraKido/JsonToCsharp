@@ -20,6 +20,10 @@ namespace JsonToCsharp.OptionParsers
                 }
 
                 options.OutDir = new DirectoryInfo(Path.GetFullPath(args[1]));
+                if (options.OutDir.Exists == false)
+                {
+                    options.OutDir.Create();
+                }
             }
 
             public void SetDefaults(ConsoleOptions options)

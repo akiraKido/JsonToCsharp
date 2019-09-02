@@ -1,4 +1,6 @@
 ﻿using System;
+using System.ComponentModel;
+using System.Threading.Tasks;
 using JsonToCsharp.Core;
 using JsonToCsharp.OptionParsers;
 
@@ -18,17 +20,32 @@ namespace JsonToCsharp
 
             var consoleOptions = new ConsoleOptions(args);
 
-            using (var reader = new FileReader(consoleOptions.InPath.FullName))
+            var generatorOptions = new Options
             {
-                var options = new Options
+                NameSpace = consoleOptions.NameSpace,
+                DeclareDataMember = consoleOptions.DeclareDataMember,
+                ListType = consoleOptions.ListType
+            };
+            var generator = new JsonToCsharpGenerator(generatorOptions);
+
+            var task = Task.Run(() =>
+            {
+                using (var reader = new FileReader(consoleOptions.InPath.FullName))
                 {
-                    NameSpace = consoleOptions.NameSpace,
-                    DeclareDataMember = consoleOptions.DeclareDataMember,
-                    ListType = consoleOptions.ListType
-                };
-                var generator = new JsonToCsharpGenerator(options);
-                generator.Create(consoleOptions.ClassName, reader, consoleOptions.OutDir);
+                    generator.Create(consoleOptions.ClassName, reader, consoleOptions.OutDir);
+                }
+            });
+
+            char[] rotation = { '/', '-', '\\', '|', '/', '-', '\\', '|' };
+            int i = 0;
+            while (task.IsCompleted == false)
+            {
+                SetCursorPosition(0, 0);
+                Write($"[{rotation[i]}] Executing");
+                i = (i + 1) % rotation.Length;
             }
+            WriteLine();
+            WriteLine("Complete!");
         }
 
         private static void PrintHelp()

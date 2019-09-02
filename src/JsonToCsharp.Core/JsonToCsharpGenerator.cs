@@ -5,7 +5,6 @@ using System.Linq;
 
 namespace JsonToCsharp.Core
 {
-    using System.Reflection;
     using static Console;
 
     public class JsonToCsharpGenerator

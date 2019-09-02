@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using JsonToCsharp.Core;
 
 namespace JsonToCsharp.OptionParsers
 {
@@ -35,7 +34,7 @@ namespace JsonToCsharp.OptionParsers
             var offset = 0;
             while (offset < args.Length)
             {
-                var arg = args[offset++];
+                var arg = args[offset];
                 if (arg[0] != '-')
                 {
                     // default argument
@@ -45,10 +44,11 @@ namespace JsonToCsharp.OptionParsers
                     }
 
                     InPath = new FileInfo(Path.GetFullPath(arg));
+                    offset += 1;
                     continue;
                 }
 
-                var argName = args[offset++].Substring(1); // remove - from input
+                var argName = args[offset].Substring(1); // remove - from input
                 var parser = _parsers.FirstOrDefault(p => p.ArgNames.Contains(argName));
                 if (parser == null)
                 {
@@ -57,6 +57,8 @@ namespace JsonToCsharp.OptionParsers
 
                 var span = new Span<string>(args, offset, parser.ArgCount);
                 parser.Parse(span, this);
+
+                offset += parser.ArgCount;
             }
 
             foreach (var parser in _parsers)
