@@ -241,7 +241,7 @@ namespace JsonToCsharp.Core
                     break;
                 case TokenType.L_Bracket:
                     var genericType = GetArrayGenericType(key, reader, lexer);
-                    type = $"IEnumerable<{genericType}>";
+                    type = $"{_options.ListType.ToString()}<{genericType}>";
                     break;
                 default:
                     throw CreateException(reader, "unexpected value - expected number or string");
