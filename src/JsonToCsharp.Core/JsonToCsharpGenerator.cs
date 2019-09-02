@@ -201,7 +201,10 @@ namespace JsonToCsharp.Core
             builder += $"}}";
             foreach (var item in items)
             {
-                builder += $"[DataMember(Name = \"{item.name}\")]";
+                if (_options.DeclareDataMember)
+                {
+                    builder += $"[DataMember(Name = \"{item.name}\")]";
+                }
                 builder += $"public {item.type} {item.name.SnakeToUpperCamel()} {{ get; }}";
             }
 
