@@ -2,71 +2,112 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 
 namespace JsonToCsharp.Core
 {
     using System.Reflection;
     using static Console;
-    using static Environment;
 
-    public static class JsonToCsharpGenerator
+    public class JsonToCsharpGenerator
     {
-        public static void Create(string name, string nameSpace, DirectoryInfo outputDir, ICharReader reader)
+        private readonly IReadOnlyOptions _options;
+
+        public JsonToCsharpGenerator() => _options = new Options();
+
+        public JsonToCsharpGenerator(IReadOnlyOptions options) => _options = options;
+
+        public void Create(string name, ICharReader reader, DirectoryInfo outputDir)
         {
             using (var lexer = new Lexer(reader))
             {
-                while (lexer.Token.tokenType != TokenType.EndOfFile)
-                {
-                    CreateEntry(name, nameSpace, outputDir, reader, lexer);
-                }
+                CreateEntry(name, outputDir, reader, lexer);
             }
         }
-
-
-        class ClassBuilder
-        {
-            private readonly StringBuilder _result = new StringBuilder();
-            private int _indent = 0;
-
-            internal void AddLine(string line)
-            {
-                for (int i = 0; i < _indent; i++)
-                {
-                    _result.Append("    ");
-                }
-
-                _result.Append(line);
-                _result.Append(NewLine);
-            }
-
-            internal void Indent() => _indent++;
-            internal void Dedent() => _indent--;
-
-            public static ClassBuilder operator +(ClassBuilder builder, string str)
-            {
-                builder.AddLine(str);
-                return builder;
-            }
-
-            public override string ToString()
-            {
-                return _result.ToString();
-            }
-        }
-
 
         private static readonly HashSet<string> PredefinedCsharpIdentifiers =
-            new HashSet<string>(File.ReadLines(
-                Path.Combine(
-                    Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
-                    "keywords-csharp.txt"
-                )
-            ));
+            new HashSet<string>(new []
+            {
+                "abstract",
+                "as",
+                "base",
+                "bool",
+                "break",
+                "byte",
+                "case",
+                "catch",
+                "char",
+                "checked",
+                "class",
+                "const",
+                "continue",
+                "decimal",
+                "default",
+                "delegate",
+                "do",
+                "double",
+                "else",
+                "enum",
+                "event",
+                "explicit",
+                "extern",
+                "false",
+                "finally",
+                "fixed",
+                "float",
+                "for",
+                "foreach",
+                "goto",
+                "if",
+                "implicit",
+                "in",
+                "int",
+                "interface",
+                "internal",
+                "is",
+                "lock",
+                "long",
+                "namespace",
+                "new",
+                "null",
+                "object",
+                "operator",
+                "out",
+                "override",
+                "params",
+                "private",
+                "protected",
+                "public",
+                "readonly",
+                "ref",
+                "return",
+                "sbyte",
+                "sealed",
+                "short",
+                "sizeof",
+                "stackalloc",
+                "static",
+                "string",
+                "struct",
+                "switch",
+                "this",
+                "throw",
+                "true",
+                "try",
+                "typeof",
+                "uint",
+                "ulong",
+                "unchecked",
+                "unsafe",
+                "ushort",
+                "using",
+                "using static",
+                "virtual",
+                "void",
+                "volatile",
+                "while",
+            });
 
-
-        private static string CreateEntry(string name, string nameSpace, DirectoryInfo outputDir, ICharReader reader,
-            Lexer lexer)
+        private string CreateEntry(string name, DirectoryInfo outputDir, ICharReader reader, Lexer lexer)
         {
             var token = lexer.Token;
             var items = new List<(string, string)>();
@@ -80,42 +121,45 @@ namespace JsonToCsharp.Core
             lexer.Advance(); // eat {
             while ((token = lexer.Token).tokenType != TokenType.R_Brace)
             {
-                var item = GetItem(nameSpace, outputDir, reader, lexer);
+                var item = GetItem(outputDir, reader, lexer);
                 items.Add(item);
             }
 
             lexer.Advance();
 
-            var result = CreateImmutableClass(name, nameSpace, items);
+            var result = CreateImmutableClass(name, items);
             var outputPath = Path.Combine(outputDir.FullName, $"{name.SnakeToUpperCamel()}.cs");
             File.WriteAllText(outputPath, result);
 
             return name.SnakeToUpperCamel();
         }
 
-        static string CreateImmutableClass(string name, string nameSpace,
-            IReadOnlyList<(string name, string type)> items)
+        private string CreateImmutableClass(string name, IReadOnlyList<(string name, string type)> items)
         {
             var nameCamelUpper = name.SnakeToUpperCamel();
 
             var builder = new ClassBuilder();
 
-            builder += "using System;";
-            builder += "using System.Collections.Generic;";
-            builder += "using System.Runtime.Serialization;";
-            builder += $"";
-            if (string.IsNullOrWhiteSpace(nameSpace) == false)
+            builder.AddLines(new[]
             {
-                builder += $"namespace {nameSpace}";
-                builder += $"{{";
+                "using System;",
+                "using System.Collections.Generic;",
+                "using System.Runtime.Serialization;",
+                ""
+            });
+
+            if (string.IsNullOrWhiteSpace(_options.NameSpace) == false)
+            {
+                builder += $"namespace {_options.NameSpace}";
+                builder += "{";
                 builder.Indent();
             }
 
             builder += $"public class {nameCamelUpper}";
-            builder += $"{{";
+            builder += "{";
             builder.Indent();
             builder += $"public {nameCamelUpper}";
-            builder += $"(";
+            builder += "(";
             builder.Indent();
             foreach (var item in items.Take(items.Count - 1))
             {
@@ -164,7 +208,7 @@ namespace JsonToCsharp.Core
             builder.Dedent();
             builder += $"}}";
 
-            if (string.IsNullOrWhiteSpace(nameSpace) == false)
+            if (string.IsNullOrWhiteSpace(_options.NameSpace) == false)
             {
                 builder.Dedent();
                 builder += $"}}";
@@ -174,7 +218,7 @@ namespace JsonToCsharp.Core
         }
 
 
-        static (string, string) GetItem(string nameSpace, DirectoryInfo outputDir, ICharReader reader, Lexer lexer)
+        private (string, string) GetItem(DirectoryInfo outputDir, ICharReader reader, Lexer lexer)
         {
             var key = GetKey(reader, lexer);
             lexer.CheckAndAdvance(TokenType.Colon);
@@ -189,10 +233,10 @@ namespace JsonToCsharp.Core
                     lexer.Advance(); // eat token
                     break;
                 case TokenType.L_Brace:
-                    type = CreateEntry(key, nameSpace, outputDir, reader, lexer);
+                    type = CreateEntry(key, outputDir, reader, lexer);
                     break;
                 case TokenType.L_Bracket:
-                    var genericType = GetArrayGenericType(key, nameSpace, outputDir, reader, lexer);
+                    var genericType = GetArrayGenericType(key, outputDir, reader, lexer);
                     type = $"IEnumerable<{genericType}>";
                     break;
                 default:
@@ -224,8 +268,7 @@ namespace JsonToCsharp.Core
             return key;
         }
 
-        private static string GetArrayGenericType(string key, string nameSpace, DirectoryInfo outputDir,
-            ICharReader reader, Lexer lexer)
+        private string GetArrayGenericType(string key, DirectoryInfo outputDir, ICharReader reader, Lexer lexer)
         {
             lexer.Advance(); // eat [
             var token = lexer.Token;
@@ -244,7 +287,7 @@ namespace JsonToCsharp.Core
                 }
 
                 genericType = arrayEntryName;
-                CreateEntry(arrayEntryName, nameSpace, outputDir, reader, lexer);
+                CreateEntry(arrayEntryName, outputDir, reader, lexer);
                 int nest = 0;
                 while (true)
                 {

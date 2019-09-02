@@ -1,5 +1,6 @@
 ﻿using System;
 using JsonToCsharp.Core;
+using JsonToCsharp.OptionParsers;
 
 namespace JsonToCsharp
 {
@@ -15,14 +16,21 @@ namespace JsonToCsharp
                 return;
             }
 
-            var options = new Options(args);
+            var consoleOptions = new ConsoleOptions(args);
 
-            using (var reader = new FileReader(options.InPath.FullName))
+            using (var reader = new FileReader(consoleOptions.InPath.FullName))
             {
-                JsonToCsharpGenerator.Create(options.ClassName, options.NameSpace, options.OutDir, reader);
+                var options = new Options
+                {
+                    NameSpace = consoleOptions.NameSpace,
+                    DeclareDataMember = consoleOptions.DeclareDataMember,
+                    ListType = consoleOptions.ListType
+                };
+                var generator = new JsonToCsharpGenerator(options);
+                generator.Create(consoleOptions.ClassName, reader, consoleOptions.OutDir);
             }
         }
-        
+
         private static void PrintHelp()
         {
             WriteLine("usage: json-to-csharp [options] <input>");
@@ -32,5 +40,4 @@ namespace JsonToCsharp
             WriteLine("  -o    output directory path            (default = [input dir]/out)");
         }
     }
-
 }
