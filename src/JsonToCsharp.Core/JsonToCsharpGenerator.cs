@@ -17,18 +17,14 @@ namespace JsonToCsharp.Core
 
         public JsonToCsharpGenerator(IReadOnlyOptions options) => _options = options;
 
-        public void Create(string name, ICharReader reader, DirectoryInfo outputDir)
+        public IReadOnlyDictionary<string, string> Create(string name, ICharReader reader)
         {
             using (var lexer = new Lexer(reader))
             {
                 CreateEntry(name, reader, lexer);
             }
 
-            foreach (var (className, generatedText) in _classResults)
-            {
-                var outputPath = Path.Combine(outputDir.FullName, $"{className}.cs");
-                File.WriteAllText(outputPath, generatedText);
-            }
+            return _classResults;
         }
 
         private static readonly HashSet<string> PredefinedCsharpIdentifiers =

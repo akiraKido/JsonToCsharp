@@ -1,5 +1,5 @@
 ﻿using System;
-using System.ComponentModel;
+using System.IO;
 using System.Threading.Tasks;
 using JsonToCsharp.Core;
 using JsonToCsharp.OptionParsers;
@@ -32,7 +32,13 @@ namespace JsonToCsharp
             {
                 using (var reader = new FileReader(consoleOptions.InPath.FullName))
                 {
-                    generator.Create(consoleOptions.ClassName, reader, consoleOptions.OutDir);
+                    var classResults = generator.Create(consoleOptions.ClassName, reader);
+                    
+                    foreach (var (className, generatedText) in  classResults)
+                    {
+                        var outputPath = Path.Combine(consoleOptions.OutDir.FullName, $"{className}.cs");
+                        File.WriteAllText(outputPath, generatedText);
+                    }
                 }
             });
 
