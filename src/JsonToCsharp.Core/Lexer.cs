@@ -9,10 +9,10 @@ namespace JsonToCsharp.Core
         None,
         EndOfFile,
 
-        L_Brace,
-        R_Brace,
-        L_Bracket,
-        R_Bracket,
+        L_Brace,        // {
+        R_Brace,        // }
+        L_Bracket,      // [
+        R_Bracket,      // ]
         Colon,
         String,
         Number,

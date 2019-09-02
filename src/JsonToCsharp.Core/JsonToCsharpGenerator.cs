@@ -110,18 +110,43 @@ namespace JsonToCsharp.Core
                 "while",
             });
 
-        private string CreateEntry(string name, ICharReader reader, Lexer lexer)
+        private string CreateEntryAsDictionary(string name, ICharReader reader, Lexer lexer)
         {
-            var token = lexer.Token;
-            var items = new List<(string, string)>();
+            // Create normal dictionary instead of class = skip a layer
+            lexer.Advance(); // eat number
+            lexer.CheckAndAdvance(TokenType.Colon); // eat colon
+            var childEntry = CreateEntry(name, reader, lexer);
 
-            if (token.tokenType != TokenType.L_Brace)
+            void SkipBlock()
             {
-                WriteLine(token.value);
-                throw CreateException(reader, "expected {");
+                while (lexer.Token.tokenType != TokenType.R_Brace
+                       && lexer.Token.tokenType != TokenType.Comma)
+                {
+                    lexer.Advance();
+
+                    if (lexer.Token.tokenType == TokenType.L_Brace)
+                    {
+                        SkipBlock();
+                        lexer.CheckAndAdvance(TokenType.R_Brace);
+                    }
+                }
             }
 
-            lexer.Advance(); // eat {
+            while (lexer.Token.tokenType == TokenType.Comma)
+            {
+                lexer.CheckAndAdvance(TokenType.Comma);
+                SkipBlock();
+            }
+
+            lexer.CheckAndAdvance(TokenType.R_Brace);
+
+            return $"IReadOnlyDictionary<int, {childEntry}>";
+        }
+
+        private string CreateEntryAsClass(string name, ICharReader reader, Lexer lexer)
+        {
+            var items = new List<(string, string)>();
+
             while (lexer.Token.tokenType != TokenType.R_Brace)
             {
                 var item = GetItem(reader, lexer);
@@ -135,6 +160,23 @@ namespace JsonToCsharp.Core
             _classResults[className] = result;
 
             return name.SnakeToUpperCamel();
+        }
+        
+        private string CreateEntry(string name, ICharReader reader, Lexer lexer)
+        {
+            var token = lexer.Token;
+
+            if (token.tokenType != TokenType.L_Brace)
+            {
+                WriteLine(token.value);
+                throw CreateException(reader, "expected {");
+            }
+
+            lexer.Advance(); // eat {
+
+            return int.TryParse(lexer.Token.value, out _) 
+                ? CreateEntryAsDictionary(name, reader, lexer)
+                : CreateEntryAsClass(name, reader, lexer);
         }
 
         private string CreateImmutableClass(string name, IReadOnlyList<(string name, string type)> items)
@@ -221,7 +263,6 @@ namespace JsonToCsharp.Core
             return builder.ToString();
         }
 
-
         private (string, string) GetItem(ICharReader reader, Lexer lexer)
         {
             var key = GetKey(reader, lexer);
@@ -243,6 +284,12 @@ namespace JsonToCsharp.Core
                     var genericType = GetArrayGenericType(key, reader, lexer);
                     type = $"{_options.ListType.ToString()}<{genericType}>";
                     break;
+                case TokenType.None:
+                case TokenType.EndOfFile:
+                case TokenType.R_Brace:
+                case TokenType.R_Bracket:
+                case TokenType.Colon:
+                case TokenType.Comma:
                 default:
                     throw CreateException(reader, "unexpected value - expected number or string");
             }
