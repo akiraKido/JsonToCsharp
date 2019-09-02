@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using JsonToCsharp.Core;
 using Microsoft.AspNetCore.Mvc;
 using JsonToCsharp.Web.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace JsonToCsharp.Web.Controllers
 {
@@ -14,6 +11,12 @@ namespace JsonToCsharp.Web.Controllers
     {
         public IActionResult Index()
         {
+            ViewBag.SelectOptions = new SelectListItem[]
+            {
+                new SelectListItem {Value = nameof(ListType.IEnumerable), Text = "IEnumerable"},
+                new SelectListItem {Value = nameof(ListType.IReadOnlyList), Text = "IReadOnlyList"},
+            };
+            
             return View();
         }
 
@@ -35,7 +38,7 @@ namespace JsonToCsharp.Web.Controllers
                 var options = new Options
                 {
                     DeclareDataMember = false,
-                    ListType = ListType.IReadOnlyList,
+                    ListType = Enum.Parse<ListType>(input.ListType),
                     NameSpace = null
                 };
 

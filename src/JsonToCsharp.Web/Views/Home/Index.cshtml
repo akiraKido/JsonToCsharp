@@ -2,7 +2,9 @@
     ViewData["Title"] = "Home Page";
 }
 
+
 <div class="text-center">
+    Select list type: @Html.DropDownList("listType", (IEnumerable<SelectListItem>)ViewBag.SelectOptions)
     Base Class Name: <input id="baseClassName">
     <br>
     <textarea id="json" style="width: 500px; height: 500px"></textarea>
@@ -20,9 +22,12 @@ function load()
     const jsonText = document.getElementById("json").value;
     console.log(jsonText);
     
+    const listType = document.getElementById("listType").value;
+    
     var data = {
         baseClassName: baseClassName,
-        jsonText: jsonText
+        jsonText: jsonText,
+        listType: listType
     };
     console.log(JSON.stringify(data));
 
