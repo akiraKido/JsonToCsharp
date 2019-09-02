@@ -1,0 +1,43 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    Base Class Name: <input id="baseClassName">
+    <br>
+    <textarea id="json" style="width: 500px; height: 500px"></textarea>
+    <br>
+    <button onclick="load()">Convert</button>
+</div>
+<code id="result" style="white-space: pre;"></code>
+
+<script>
+function load()
+{
+    const baseClassName = document.getElementById("baseClassName").value;
+    console.log(baseClassName);
+
+    const jsonText = document.getElementById("json").value;
+    console.log(jsonText);
+    
+    var data = {
+        baseClassName: baseClassName,
+        jsonText: jsonText
+    };
+    console.log(JSON.stringify(data));
+
+    $.ajax({
+        async: true,
+        url: '/Home/Generate',
+        type: 'POST',
+        data: JSON.stringify(data),
+        contentType: "application/json",
+        success: (data) => {
+            console.log(data);
+            
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerText = data;
+        }
+    });
+}
+</script>
