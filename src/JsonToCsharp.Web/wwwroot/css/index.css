@@ -1,0 +1,12 @@
+.codeBlock {
+    padding: 40px;
+    border: solid #8abaed 1px;
+    border-radius: 10px;
+    margin: 10px 0px;
+    width: 600px;
+}
+
+.codeBlock .headerDiv {
+    margin-bottom: 10px;
+    font-style: italic;
+}

@@ -2,19 +2,48 @@
     ViewData["Title"] = "Home Page";
 }
 
+@section Header
+{
+    <link rel="stylesheet" href="css/index.css"/>
+}
 
-<div class="text-center">
-    Base Class Name: <input id="baseClassName">
-    <br>
-    Select list type: @Html.DropDownList("listType", (IEnumerable<SelectListItem>)ViewBag.SelectOptions)
-    <br>
-    <textarea id="json" style="width: 500px; height: 500px"></textarea>
-    <br>
-    <button onclick="load()">Convert</button>
+<div class="row">
+    <div class="col">
+        <form style="width: 500px">
+                <div class="form-group">
+                    <label for="baseClassName">Base Class Name</label>
+                    <input type="text" class="form-control" id="baseClassName" value="TestClass"/>
+                </div>
+                <div class="form-group">
+                    <label>Select list type</label>
+                    @Html.DropDownList(
+                        "listType",
+                        (IEnumerable<SelectListItem>) ViewBag.SelectOptions,
+                        new {@class = "form-control"})
+                </div>
+                <div class="form-group">
+                    <textarea class="form-control" id="json" style="height: 400px">{"hoge": 1}</textarea>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" onclick="load()">Convert</button>
+                </div>
+                <div class="form-group" id="errorMessage" style="display: none"></div>
+            </form>
+    </div>
+    <div class="col">
+        <div class="row">
+            <div class="col">
+                <button type="button" id="copyButton" class="btn btn-light">Copy all as single file</button>
+            </div>
+        </div>
+        <div class="row">
+            <div id="result" style="white-space: pre;"></div>
+        </div>
+    </div>
 </div>
-<code id="result" style="white-space: pre;"></code>
 
 <script>
+
 function load()
 {
     const baseClassName = document.getElementById("baseClassName").value;
@@ -25,7 +54,7 @@ function load()
     
     const listType = document.getElementById("listType").value;
     
-    var data = {
+    const data = {
         baseClassName: baseClassName,
         jsonText: jsonText,
         listType: listType
@@ -38,12 +67,105 @@ function load()
         type: 'POST',
         data: JSON.stringify(data),
         contentType: "application/json",
-        success: (data) => {
-            console.log(data);
+        success: (result) => {
+            console.log(result);
+            if(result.success === true) {
+                showError(false);
+                
+                const data = result.value;
+                            
+                const resultDiv = document.getElementById("result");
+                resultDiv.innerHTML = "";
+                
+                for(let key in data) {
+                    if(data.hasOwnProperty(key) === false) {
+                        continue;
+                    }
+                    
+                    createElement(resultDiv, "div", div => {
+                        div.className = "codeBlock";
+                        createElement(div, "div", headerDiv => {
+                            headerDiv.className = "headerDiv";
+                            headerDiv.innerText = `${key}.cs`;
+                        });
+                        createElement(div, "code", codeBlock => {
+                            codeBlock.className = "csharp";
+                            codeBlock.innerText = data[key];
+                            
+                            hljs.highlightBlock(codeBlock);
+                        });
+                    });
+                }
             
-            const resultDiv = document.getElementById("result");
-            resultDiv.innerText = data;
+                const copyButton = document.getElementById("copyButton");
+                copyButton.onclick = () => {
+                    function findLastUsingLineBreak(code) {
+                        let indexOfLineBreak = -1;                    
+                        while(true)
+                        {
+                            const lastLineBreak = indexOfLineBreak + 1;
+                            indexOfLineBreak = code.indexOf("\n", indexOfLineBreak + 1);
+                            const line = code.substring(lastLineBreak, indexOfLineBreak);
+                            if(line.startsWith("using")) continue;
+                            break;
+                        }
+                        return indexOfLineBreak;
+                    }
+                    
+                    const values = Object.values(data);
+                    
+                    let using = "";
+                    let result = "";
+                    for(let code of values) {
+                        const usingSeparator = findLastUsingLineBreak(code);
+                        if(usingSeparator > using.length) {
+                            using = code.substring(0, usingSeparator);
+                        }
+                        
+                        result += `${code.substring(usingSeparator + 1)}\n`;
+                    }
+                    
+                    copyToClipboard(using + result);
+                };        
+            }
+            else {
+                showError(true, result.error);
+            }
+            
         }
     });
 }
+
+function showError(val, text) {
+    const errorMessage = document.getElementById("errorMessage");
+    if(val === false) {
+        errorMessage.style.display = "none";
+        return;
+    }
+    
+    errorMessage.innerText = `Error! ${text}`;
+    errorMessage.style.display = "block";
+}
+
+function createElement(parent, name, action)
+{
+    const element = document.createElement(name);
+    action(element);
+    parent.append(element);
+}
+
+function copyToClipboard(text)
+{
+    const textarea = document.createElement("textarea");
+    textarea.textContent = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+}
+
+window.addEventListener("load", () => {
+    load();
+}, false);
+
 </script>

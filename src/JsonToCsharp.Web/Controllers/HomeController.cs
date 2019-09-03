@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using JsonToCsharp.Core;
 using Microsoft.AspNetCore.Mvc;
@@ -26,7 +27,7 @@ namespace JsonToCsharp.Web.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        public ActionResult<string> Generate([FromBody] JsonSendModel input)
+        public ActionResult<Result<IReadOnlyDictionary<string, string>>> Generate([FromBody] JsonSendModel input)
         {
             using (var reader = new MemoryReader(input.JsonText))
             {
@@ -37,21 +38,19 @@ namespace JsonToCsharp.Web.Controllers
                     NameSpace = null
                 };
 
-                var classData = new JsonToCsharpGenerator(options).Create(input.BaseClassName, reader);
-
-                var result = string.Empty;
-                
-                foreach (var kv in classData)
+                try
                 {
-                    var className = kv.Key;
-                    var text = kv.Value;
+                    var classData = new JsonToCsharpGenerator(options).Create(input.BaseClassName, reader);
 
-                    result += $"// {className}.cs\n\n";
-                    result += $"{text}\n\n";
+                    return Result<IReadOnlyDictionary<string, string>>.CreateSuccess(classData);
                 }
-                
-                return result;
+                catch(Exception e)
+                {
+                    return Result<IReadOnlyDictionary<string, string>>.CreateFail(e.Message);
+                }
             }
         }
+
     }
+    
 }
