@@ -9,6 +9,8 @@ namespace JsonToCsharp.Core
         private readonly StringBuilder _result = new StringBuilder();
         private int _indent = 0;
 
+        internal void AddLine() => AddLine("");
+        
         internal void AddLine(string line)
         {
             for (int i = 0; i < _indent; i++)

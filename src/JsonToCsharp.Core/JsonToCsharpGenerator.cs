@@ -161,7 +161,7 @@ namespace JsonToCsharp.Core
 
             return name.SnakeToUpperCamel();
         }
-        
+
         private string CreateEntry(string name, ICharReader reader, Lexer lexer)
         {
             var token = lexer.Token;
@@ -174,7 +174,7 @@ namespace JsonToCsharp.Core
 
             lexer.Advance(); // eat {
 
-            return int.TryParse(lexer.Token.value, out _) 
+            return int.TryParse(lexer.Token.value, out _)
                 ? CreateEntryAsDictionary(name, reader, lexer)
                 : CreateEntryAsClass(name, reader, lexer);
         }
@@ -185,13 +185,30 @@ namespace JsonToCsharp.Core
 
             var builder = new ClassBuilder();
 
-            builder.AddLines(new[]
+            builder += "using System;";
+
             {
-                "using System;",
-                "using System.Collections.Generic;",
-                "using System.Runtime.Serialization;",
-                ""
-            });
+                // Search for any list types
+                // TODO: should be a better way...
+                var listTypeEnumNames = Enum.GetNames(typeof(ListType));
+
+                foreach (var item in items)
+                {
+                    if (listTypeEnumNames.Any(listType => item.type.Contains(listType)))
+                    {
+                        builder += "using System.Collections.Generic;";
+                        goto DONE;
+                    }
+                }
+            }
+            DONE:
+
+            if (_options.DeclareDataMember)
+            {
+                builder += "using System.Runtime.Serialization;";
+            }
+
+            builder.AddLine();
 
             if (string.IsNullOrWhiteSpace(_options.NameSpace) == false)
             {
