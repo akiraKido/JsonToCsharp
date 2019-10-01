@@ -114,7 +114,16 @@ namespace JsonToCsharp.Core
             // Create normal dictionary instead of class = skip a layer
             lexer.Advance(); // eat number
             lexer.CheckAndAdvance(TokenType.Colon); // eat colon
-            var childEntry = CreateEntry(name, reader, lexer);
+            string childEntry;
+            if (lexer.Token.tokenType == TokenType.L_Brace)
+            {
+                childEntry = CreateEntry(name, reader, lexer);
+            }
+            else
+            {
+                childEntry = GetStandardType(reader, lexer.Token);
+                lexer.Advance(); // eat standard
+            }
 
             void SkipBlock()
             {

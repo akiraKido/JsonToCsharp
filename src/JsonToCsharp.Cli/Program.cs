@@ -30,15 +30,23 @@ namespace JsonToCsharp
 
             var task = Task.Run(() =>
             {
-                using (var reader = new FileReader(consoleOptions.InPath.FullName))
+                try
                 {
-                    var classResults = generator.Create(consoleOptions.ClassName, reader);
-                    
-                    foreach (var (className, generatedText) in  classResults)
+
+                    using (var reader = new FileReader(consoleOptions.InPath.FullName))
                     {
-                        var outputPath = Path.Combine(consoleOptions.OutDir.FullName, $"{className}.cs");
-                        File.WriteAllText(outputPath, generatedText);
+                        var classResults = generator.Create(consoleOptions.ClassName, reader);
+
+                        foreach (var (className, generatedText) in classResults)
+                        {
+                            var outputPath = Path.Combine(consoleOptions.OutDir.FullName, $"{className}.cs");
+                            File.WriteAllText(outputPath, generatedText);
+                        }
                     }
+                }
+                catch (Exception e)
+                {
+                    Write($"error:\n{e}");
                 }
             });
 
