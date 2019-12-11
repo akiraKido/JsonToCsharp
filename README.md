@@ -1,6 +1,6 @@
 # JsonToCsharp
 
-Try it out [here](http://tsuchigoe.com/) (temporary URL, could change in the future).
+Try it out [here](http://json2csharp.tsuchigoe.com/) (temporary URL, could change in the future).
 
 Convert this
 
